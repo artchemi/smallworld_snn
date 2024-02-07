@@ -35,23 +35,16 @@ def main():
 
     os.makedirs(random_dir_name)
 
-    print('Construct layer...')
-    hidden_layer = layers.IntraConnectLayer(args.n, args.k, args.p, random_dir_name)
+    hidden_layer = layers.IntraConnectLayer(args.n, args.k, args.p, args.dt, random_dir_name)
     hidden_layer.from_edges()
-
-    print('Done!')
-    print('Spike generating...')
 
     input_spikes = spike_generator(n=args.n, steps=args.steps, version=args.generator_type)
 
-    print('Done!')
     print('Saved to folder: ', random_dir_name)
 
     for i in tqdm(range(len(input_spikes)), ascii=True, desc='forward'):
         out, mem = hidden_layer.intra_forward(input_spikes[i])
         df.loc[len(df.index)] = input_spikes[i].tolist() + mem + out.tolist()
-
-    print('Done!')
 
     df_name = f'{random_dir_name}/data_{random_dir_name}.csv'
     df.to_csv(df_name, index=False)
