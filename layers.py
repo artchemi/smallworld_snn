@@ -18,6 +18,8 @@ class HiddenLayer:
     def __init__(self):
         self.graph = nx.watts_strogatz_graph(10, 5, 0.5)
         self.node_opts = {"node_size": 500, "node_color": "r"}
+        self.neurons = []
+        self.dt = 0.01
         self.n = 10
         self.k = 5
         self.p = 0.5
@@ -29,8 +31,42 @@ class HiddenLayer:
     def from_edges(self):
         pass
 
-    def feedforward(self):
-        pass
+    def intra_forward(self, input_spike: np.ndarray):
+        """
+        Функция для расчета спайков для каждого шага
+        :param input_spike:
+        :return:
+        """
+        assert len(input_spike) == len(self.syn_matrix), 'Размерности матриц должны совпадать!'
+        output_spike = np.zeros(input_spike.shape[0])
+
+        membrane_potential = []
+
+        for i in range(0, len(input_spike)):
+            self.neurons[i].step(self.dt, input_spike[i], 1)
+            v = self.neurons[i].v
+
+            # membrane_potential.append(v)
+
+            if v >= self.neurons[i].thrs:
+                output_spike[i] = 10.0
+            else:
+                continue
+
+        input_sw = np.dot(a=output_spike, b=self.syn_matrix)
+
+        for i in range(0, len(input_sw)):
+            self.neurons[i].step(self.dt, input_sw[i], 1)
+            v = self.neurons[i].v
+
+            membrane_potential.append(v)
+
+            if v >= self.neurons[i].thrs:
+                output_spike[i] = 10.0
+            else:
+                continue
+
+        return output_spike, membrane_potential
 
     def draw_graph(self):
         # ---directed graph---
@@ -59,7 +95,7 @@ class IntraConnectLayer(HiddenLayer):
 
     """
 
-    def __init__(self, amount_neurons: int, k_neighbours: int, probability: float, name: str) -> None:
+    def __init__(self, amount_neurons: int, k_neighbours: int, probability: float, dtau: float, name: str) -> None:
         """
         Конструктор класса
         :param amount_neurons: (int) - общее число нейронов в слое
@@ -74,6 +110,8 @@ class IntraConnectLayer(HiddenLayer):
         self.n = amount_neurons
         self.k = k_neighbours
         self.p = probability
+
+        self.dt = dtau
 
         self.name = name
 
@@ -115,7 +153,7 @@ class IntraConnectLayer(HiddenLayer):
 
         print('Amount of double edges: ', np.round(len(pairs) * double_percent))
 
-    def intra_forward(self, input_spike: np.ndarray) -> np.ndarray:
+    def intra_forward(self, input_spike: np.ndarray):
         """
         Функция для расчета спайков для каждого шага
         :param input_spike:
@@ -124,29 +162,10 @@ class IntraConnectLayer(HiddenLayer):
         assert len(input_spike) == len(self.syn_matrix), 'Размерности матриц должны совпадать!'
         output_spike = np.zeros(input_spike.shape[0])
 
-        dt = 0.01
-
-        # ---ОПТИМИЗИРОВАТЬ---
-        # Постоянное открытие датафрейма, возможно, сильно замедляет моделирование
-
-        check_data = 'data_mem.csv' in os.listdir(f'{self.name}')  # Проверка датафрейма в директории
-        if check_data:
-            df = pd.read_csv(f'{self.name}/data_mem.csv')
-        else:
-            columns_spike = []
-            columns_neuron = []
-            columns_out_spike = []
-            for i in range(len(input_spike)):
-                columns_spike.append(f'inp_spike_{i}')
-                columns_neuron.append(f'neuron_{i}')
-                columns_out_spike.append(f'out_spike_{i}')
-
-            df = pd.DataFrame(columns=columns_spike+columns_neuron+columns_out_spike)
-
         membrane_potential = []
 
         for i in range(0, len(input_spike)):
-            self.neurons[i].step(dt, input_spike[i], 1)
+            self.neurons[i].step(self.dt, input_spike[i], 1)
             v = self.neurons[i].v
 
             # membrane_potential.append(v)
@@ -159,7 +178,7 @@ class IntraConnectLayer(HiddenLayer):
         input_sw = np.dot(a=output_spike, b=self.syn_matrix)
 
         for i in range(0, len(input_sw)):
-            self.neurons[i].step(dt, input_sw[i], 1)
+            self.neurons[i].step(self.dt, input_sw[i], 1)
             v = self.neurons[i].v
 
             membrane_potential.append(v)
@@ -169,33 +188,19 @@ class IntraConnectLayer(HiddenLayer):
             else:
                 continue
 
-        df.loc[len(df.index)] = input_spike.tolist() + membrane_potential + output_spike.tolist()
-        df.to_csv(f'{self.name}/data_mem.csv', index=False)
-
-        return output_spike
-
-    @Decorators.benchmark
-    def feedforward(self, input_spike):
-        """
-        Функция для расчетов спайков
-        :param input_spike: (np.array) - входные спайки
-        :return:
-        """
-        output = []
-
-        return output
+        return output_spike, membrane_potential
 
 
 class IntraConnectLayerBio(HiddenLayer):
     """Биологически реалистичная топология малого мира *алгоритм в разработке*"""
 
-    def __init__(self, amount_neurons: int, radius: float, probability_near: float, probability_far: float):
+    def __init__(self, amount_neurons: int, radius: float, probability_near: float, probability_far: float, name: str):
         """
         Конструктор класса
-        :param amount_neurons: (int)
-        :param radius: (float)
-        :param probability_near: (float)
-        :param probability_far: (float)
+        :param amount_neurons: (int) - количество нейронов
+        :param radius: (float) - радиус ближней зоны
+        :param probability_near: (float) - вероятность образования связи между двумя нейронами в ближней области
+        :param probability_far: (float) - вероятность образования связи между двумя нейронами в дальней зоне
         """
         super().__init__()
         self.n = amount_neurons
@@ -204,6 +209,13 @@ class IntraConnectLayerBio(HiddenLayer):
         self.p_far = probability_far
 
         self.syn_matrix = np.zeros((self.n, self.n), dtype=np.float64)
+
+        self.name = name
+
+        self.graph = nx.Graph()
+
+        while len(self.neurons) < self.n:
+            self.neurons.append(IZHI())
 
     @staticmethod
     def __generate_node_coord(n: int) -> pd.DataFrame:
@@ -237,10 +249,10 @@ class IntraConnectLayerBio(HiddenLayer):
         """
         Calculation of distance between 2 nodes in 2-dimensions surface
 
-        :param x_1:
-        :param y_1:
-        :param x_2:
-        :param y_2:
+        :param x_1: (float)
+        :param y_1: (float)
+        :param x_2: (float)
+        :param y_2: (float)
         :return:
         """
 
@@ -248,11 +260,50 @@ class IntraConnectLayerBio(HiddenLayer):
 
         return np.round(d, 2)
 
+    @staticmethod
+    def __synapse_connect(self, node_1, node_2, distance: float):
+        # ---near area---
+        if distance <= self.r and np.random.choice([True, False], 1, p=[self.p_near, 1 - self.p_near])[0]:
+            syn_force = 5.0
+            self.graph.add_edge(node_1, node_2, weight=syn_force, capacity=0)
+            self.syn_matrix[int(node_1), int(node_2)] = syn_force
+
+        # ---far area---
+        elif distance > self.r and np.random.choice([True, False], 1, p=[self.p_far, 1 - self.p_far])[0]:
+            syn_force = 1.0
+            self.graph.add_edge(node_1, node_2, weight=syn_force, capacity=0)
+            self.syn_matrix[int(node_1), int(node_2)] = syn_force
+
     @Decorators.benchmark
-    def from_edges(self):
+    def from_edges(self) -> None:
         df_coord = self.__generate_node_coord(self.n)
+        df_coord.to_csv(f'{self.name}/neuron_coord_{self.name}.csv', index=False)
 
+        neurons_index = np.arange(0, self.n)
 
+        meshgrid = np.array(np.meshgrid(neurons_index, neurons_index)).T.reshape(-1, 2).tolist()
+        pairs_lst = meshgrid.copy()
+
+        for pair in meshgrid:
+            if pair[0] == pair[1] or pair[1] < pair[0]:
+                pairs_lst.remove(pair)
+            else:
+                continue
+
+        for pair in pairs_lst:
+            x_1 = df_coord['x'].loc[pair[0]]
+            y_1 = df_coord['y'].loc[pair[0]]
+            x_2 = df_coord['x'].loc[pair[1]]
+            y_2 = df_coord['y'].loc[pair[1]]
+
+            distance = self.__calculate_dist(x_1, y_1, x_2, y_2)
+            print('Distance: ', distance)
+
+            self.__synapse_connect(self,f'{pair[0]}', f'{pair[1]}', distance)
+
+        print(self.graph)
+        print('Neurons', nx.get_node_attributes(self.graph, 'pos'))
+        print('Synapse: ', nx.get_edge_attributes(self.graph, 'weight'))
 
     @Decorators.benchmark
     def feedforward(self):
