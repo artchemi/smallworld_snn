@@ -10,7 +10,7 @@ class poisson_filter():
     '''Class for Poisson filtering'''
 
     @staticmethod
-    def spike_generator(input_array, total_time, delay_time, frequency):
+        def spike_generator(image_list, total_time, delay_time, frequency, seed=42):
 
         '''
         Function generates spike patterns based on the input data array.
@@ -18,10 +18,12 @@ class poisson_filter():
 
         Parameters:
 
-        input_array: numpy array containing input data for each neuron
+        image_list: list of numpy arrays containing input data for each neuron
         total_time (float): total duration for spike generation in seconds
         delay_time (float): time delay between spikes for each neuron in seconds
         frequency (int): frequency of spike generation in Hz
+        seed (Optional(int), default = 42): a numerical value that
+        generates a new set or repeats pseudo-random numbers
 
         Returns:
 
@@ -29,19 +31,16 @@ class poisson_filter():
         for each neuron over the specified total_time duration
         '''
 
+        np.random.seed(seed)
+        generated_spikes = np.zeros((image_list.shape[0], image_list.shape[1], total_time * frequency))
 
-        generated_spikes = np.zeros((input_array.shape[1], total_time * frequency))
-        data_norm = (input_array - input_array.min()) / (input_array.max() - input_array.min())
-        for i in range(input_array.shape[1]):
-            x = data_norm[0][i]
-            index = 0
-            for f in range(total_time * frequency):
-                if f >= index:
-                    if np.random.choice([0, 1], p=[1 - x, x]) == 1:
-                        generated_spikes[i][f] = 1
-                        index = f + mt.ceil(frequency * delay_time)
-                else:
-                    continue
+        for z in range(image_list.shape[0]):
+            data_norm = (image_list[z] - image_list[z].min()) / (image_list[z].max() - image_list[z].min())
+            for i in range(image_list.shape[1]):
+                while f <= total_time * frequency:
+                    if np.random.choice([0, 1], p=[1 - data_norm[i], data_norm[i]]) == 1:
+                        generated_spikes[z][i][f] = 1
+                        f = f + mt.ceil(frequency * delay_time)
 
         return generated_spikes
 
