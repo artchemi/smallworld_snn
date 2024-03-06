@@ -24,27 +24,33 @@ def generate_random_weights(number_of_neurons):
     return np.random.rand(number_of_neurons)
 
 
+
+def stdp_event(spike_time_1, spike_time_2, dt):  # multiply by dt
+    dw = 0
+    delta = (spike_time_1 - spike_time_2) * dt
+    if abs(delta) < STDP.tau_bound:
+        if delta < 0:
+            dw = -STDP.A_LTP * np.exp(delta / STDP.tau_LTP)
+        elif delta > 0:
+            dw = STDP.A_LTP * np.exp(-delta / STDP.tau_LTP)
+    return dw
+
+
+def generate_pairs():
+    pass
+
+
 def stdp_weight_update(input_spikes_time, spike_train_time, weights):
-    deltas = []
     sum_constant = sum(weights)
     for n in range(len(weights)):
         for i in range(len(input_spikes_time)):
             for j in range(len(spike_train_time)):
-                delta = spike_train_time[j] - input_spikes_time[i]
-                if abs(delta) < STDP.tau_bound:
-                    deltas.append(delta)
-                for delta in deltas:
-                    if delta < 0:
-                        weights[n] += -STDP.A_LTP * np.exp(delta/STDP.tau_LTP)
-                    elif delta > 0:
-                        weights[n] += STDP.A_LTP * np.exp(-delta/STDP.tau_LTP)
-                    else:
-                        weights[n] += 0
-    divisor = sum(weights)/sum_constant
+                stdp_event(spike_train_time[j], input_spikes_time[i])
+    divisor = sum(weights) / sum_constant
     for i in range(len(weights)):
-        weights[i] = weights[i]/divisor
+        weights[i] = weights[i] / divisor
 
-    return weights, deltas
+    return weights
 
 
 def stdp_plot(input_spikes_time, spike_train_time, weights_initial, weights_updated, dw):
