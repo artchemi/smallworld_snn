@@ -10,7 +10,7 @@ class poisson_filter():
     '''Class for Poisson filtering'''
 
     @staticmethod
-        def spike_generator(image_list, total_time, delay_time, frequency, seed=42):
+    def spike_generator(image_list, total_time, delay_time, frequency, seed=42):
 
         '''
         Function generates spike patterns based on the input data array.

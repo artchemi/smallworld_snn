@@ -10,7 +10,7 @@ parser = argparse.ArgumentParser(
                 ' импульсной нейронной сети, имеющей топологию small-world'
 )
 
-parser.add_argument('n', type=int, default=30, help='Number of neurons')
+parser.add_argument('n', type=int, default=10, help='Number of neurons')
 parser.add_argument('k', type=int, default=10,
                     help='Number of synapses for every neurons.'
                          ' Each node is joined with its k nearest neighbors in a ring topology.')
