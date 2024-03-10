@@ -59,7 +59,7 @@ def spike_generator(n, steps=1000, version='1') -> np.ndarray:
             for i in tqdm(range(0, steps)):
                 temp_spikes_lst = []
                 while len(temp_spikes_lst) < n:
-                    temp_spike = 10 if np.random.choice([True, False], 1)[0] else 0
+                    temp_spike = 10.0 if np.random.choice([True, False], 1)[0] else 0
                     temp_spikes_lst.append(temp_spike)
 
                 spikes.append(temp_spikes_lst)
@@ -128,8 +128,81 @@ def plot_neurons_demo(df_name: str) -> None:
     plt.show()
 
 
-def plot_heatmap(df_name: str, dir_name: str) -> None:
-    df = pd.read_csv(df_name)
+
+def plot_mem(df: pd.DataFrame) -> None:
+    columns = df.columns
+    new_columns_mem = {}
+    col_mem_lst = []
+
+    for col_name in columns:
+        if 'neuron_' in col_name:
+            new_col_name = col_name.replace('out_spike_', '')
+            new_columns_mem[f'{col_name}'] = new_col_name
+
+            col_mem_lst.append(new_col_name)
+
+        else:
+            continue
+    
+    df_membrane = df.rename(columns=new_columns_mem)[col_mem_lst]
+    
+    plt.figure(figsize=(20, 8))
+
+    for col in df_membrane.columns:
+        membrane_potential = df_membrane[col].to_numpy()
+        plt.plot(np.arange(membrane_potential.shape[0]), membrane_potential, label=col)
+
+    plt.xlabel('Time')
+    plt.ylabel('Membrane potential')
+    plt.legend()
+
+
+def plot_inputs(input_spikes: np.ndarray) -> None:
+    df_input = pd.DataFrame(input_spikes.T)
+
+    plt.figure(figsize=(20, 8))
+    sns.heatmap(df_input, cmap='Greys')
+    plt.xlabel('Time')
+    plt.ylabel('Index')
+
+
+def plot_outputs(df: pd.DataFrame) -> None:
+    """_summary_
+
+    Args:
+        df (pd.DataFrame): _description_
+    """
+    columns = df.columns
+    new_columns_out = {}
+    col_out_lst = []
+
+    for col_name in columns:
+        if 'out_spike_' in col_name:
+            new_col_name = col_name.replace('out_spike_', '')
+            new_columns_out[f'{col_name}'] = new_col_name
+
+            col_out_lst.append(new_col_name)
+
+        else:
+            continue
+    
+    df_output = df.rename(columns=new_columns_out)[col_out_lst].T
+
+    # ---heatmaps---
+    plt.figure(figsize=(20, 8))
+    sns.heatmap(df_output, cmap='Greys')
+    plt.xlabel('Time steps, ms')
+    plt.ylabel('Neuron`s index')
+
+
+
+def plot_heatmap(df: pd.DataFrame) -> None:
+    """
+    Построение хитмэпов активности нейронов и выходных спайков
+
+    Args:
+        df (pd.DataFrame): датафрейм с активностью нейронов и спайками
+    """
     columns = df.columns
 
     new_columns_mem = {}
@@ -160,6 +233,8 @@ def plot_heatmap(df_name: str, dir_name: str) -> None:
     df_input = df.rename(columns=new_columns_inp)[col_inp_lst].T
 
     # ---heatmaps---
+    plt.figure(figsize=(20, 8))
+
     plt.subplot(2, 1, 1)
     sns.heatmap(df_membrane, cmap='plasma')
     plt.xlabel('Time steps, ms')
@@ -171,7 +246,7 @@ def plot_heatmap(df_name: str, dir_name: str) -> None:
     plt.ylabel('Neuron`s index')
 
     plt.tight_layout()
-    plt.savefig(f'{dir_name}/heatmap.png', dpi=300, format='PNG')
+    # plt.savefig(f'{dir_name}/heatmap.png', dpi=300, format='PNG')
     plt.show()
 
 
@@ -207,14 +282,3 @@ def create_df(n: int) -> pd.DataFrame:
     df = pd.DataFrame(columns=columns_spike+columns_neuron+columns_out_spike)
 
     return df
-
-
-def main():
-    df_name = 'hidden_neurons/data_mem.csv'
-    # plot_neurons_demo(df_name=df_name)
-    # plot_heatmap(df_name)
-    # plot_shit(df_name)
-
-
-if __name__ == '__main__':
-    main()

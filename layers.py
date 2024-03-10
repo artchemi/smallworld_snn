@@ -26,7 +26,6 @@ class HiddenLayer:
 
         self.syn_matrix = np.zeros((self.n, self.n), dtype=np.float64)
 
-        self.name = None
 
     def from_edges(self):
         pass
@@ -68,7 +67,7 @@ class HiddenLayer:
 
         return output_spike, membrane_potential
 
-    def draw_graph(self):
+    def draw_graph(self) -> None:
         # ---directed graph---
         g = nx.DiGraph(directed=True)
 
@@ -87,7 +86,11 @@ class HiddenLayer:
 
         nx.draw_networkx(g, pos=pos, with_labels=True, **self.node_opts)
         # nx.draw_networkx(self.graph, **self.node_opts)
-        plt.savefig(f'{self.name}/graph.png', dpi=300, format='PNG')
+        # plt.savefig(f'{self.name}/graph.png', dpi=300, format='PNG')
+
+    def get_connectivity(self) -> pd.DataFrame:
+        return pd.DataFrame(self.syn_matrix)
+
 
 
 class IntraConnectLayer(HiddenLayer):
@@ -95,7 +98,7 @@ class IntraConnectLayer(HiddenLayer):
 
     """
 
-    def __init__(self, amount_neurons: int, k_neighbours: int, probability: float, dtau: float, name: str) -> None:
+    def __init__(self, amount_neurons: int, k_neighbours: int, probability: float, dtau: float) -> None:
         """
         Конструктор класса
         :param amount_neurons: (int) - общее число нейронов в слое
@@ -113,8 +116,6 @@ class IntraConnectLayer(HiddenLayer):
 
         self.dt = dtau
 
-        self.name = name
-
         self.syn_matrix = np.zeros((self.n, self.n), dtype=np.float64)
 
         self.graph = nx.watts_strogatz_graph(self.n, self.k, self.p)
@@ -124,7 +125,6 @@ class IntraConnectLayer(HiddenLayer):
         while len(self.neurons) < self.n:
             self.neurons.append(IZHI())
 
-    @Decorators.benchmark
     def from_edges(self, double_percent=0.05) -> None:
         """
 
@@ -134,7 +134,7 @@ class IntraConnectLayer(HiddenLayer):
         """
         pairs = list(self.graph.edges)
         for pair in pairs:
-            self.syn_matrix[pair[0], pair[1]] = 10.0
+            self.syn_matrix[pair[0], pair[1]] = 250.0   # Инициализация связей
             # self.syn_matrix[pair[0], pair[1]] = np.round(np.random.rand(1)[0], 3)
 
         n_double = np.round(len(pairs) * double_percent)
@@ -148,16 +148,19 @@ class IntraConnectLayer(HiddenLayer):
             choices_edge = pairs_copy[rand_edge_index]
             pairs_copy.pop(rand_edge_index)
 
-            self.syn_matrix[choices_edge[1], choices_edge[0]] = np.round(np.random.rand(1)[0], 3)
+            self.syn_matrix[choices_edge[1], choices_edge[0]] = np.round(np.random.randint(250, size=1)[0], 3)
             counter_double += 1
 
-        print('Amount of double edges: ', np.round(len(pairs) * double_percent))
+        print('Количество двойных связей: ', np.round(len(pairs) * double_percent))
 
     def intra_forward(self, input_spike: np.ndarray):
-        """
-        Функция для расчета спайков для каждого шага
-        :param input_spike:
-        :return:
+        """_summary_
+
+        Args:
+            input_spike (np.ndarray): _description_
+
+        Returns:
+            _type_: _description_
         """
         assert len(input_spike) == len(self.syn_matrix), 'Размерности матриц должны совпадать!'
         output_spike = np.zeros(input_spike.shape[0])
