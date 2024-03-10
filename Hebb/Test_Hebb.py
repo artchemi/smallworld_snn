@@ -4,13 +4,14 @@ import layers
 from utils import *
 from tqdm import tqdm
 import os
+from Hebb.Tools import Tools
 
 parser = argparse.ArgumentParser(
     description='Основной скрипт для запуска моделирования скрытого слоя в'
                 ' импульсной нейронной сети, имеющей топологию small-world'
 )
 
-parser.add_argument('n', type=int, default=30, help='Number of neurons')
+parser.add_argument('n', type=int, default=10, help='Number of neurons')
 parser.add_argument('k', type=int, default=10,
                     help='Number of synapses for every neurons.'
                          ' Each node is joined with its k nearest neighbors in a ring topology.')
@@ -45,6 +46,15 @@ def main():
     for i in tqdm(range(len(input_spikes)), ascii=True, desc='forward'):
         out, mem = hidden_layer.intra_forward(input_spikes[i])
         df.loc[len(df.index)] = input_spikes[i].tolist() + mem + out.tolist()
+
+    last_50_columns = df.iloc[:, -args.n:]
+    indexes = last_50_columns.apply(Tools.find_index_of_spikes, args=(10.0,))
+    indexes.dropna(inplace=True)
+    max_len = max(map(len, indexes))
+    filled_lists = [list(filter(None, x)) + [None] * (max_len - len(x)) for x in indexes]
+
+    tau_max = Tools.find_tau_max(np.array(filled_lists), args.dt)
+    print(f'Tau maximum: {tau_max}')
 
     df_name = f'{random_dir_name}/data_{random_dir_name}.csv'
     df.to_csv(df_name, index=False)
