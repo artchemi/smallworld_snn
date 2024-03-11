@@ -51,7 +51,7 @@ def main():
     indexes = last_50_columns.apply(Tools.find_index_of_spikes, args=(10.0,))
     indexes.dropna(inplace=True)
     max_len = max(map(len, indexes))
-    filled_lists = [list(filter(None, x)) + [None] * (max_len - len(x)) for x in indexes]
+    filled_lists = [list(filter(None, x)) + [np.nan] * (max_len - len(x)) for x in indexes]
 
     tau_max = Tools.find_tau_max(np.array(filled_lists), args.dt)
     print(f'Tau maximum: {tau_max}')
