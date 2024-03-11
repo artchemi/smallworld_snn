@@ -9,27 +9,12 @@
 ### Генератор спайков 3:
 ![alt text](r8qi2m0ogi/heatmap.png)
 ## Установка
-Все необходимые библиотеки указаны в файле requirements.txt, установка через pip.
+
 ```python
-  pip install -r requirements.txt
+  conda env create --name small_world --file=environment.yml
+  conda activate small_world
 ```
 
 ## Запуск
-Моделирование можно провести с помощью ```script_ws.py```, указывая во флагах необходимые параметры. 
+Примеры использования есть в ```network_test.ipynb```
 
-### Пример:
-```python
-  python script_ws.py 50 25 0.1 '1' 500 0.1
-```
-
-n - число нейронов 
-
-k - число соседей для каждого нейрона (k < n)
-
-p - вероятность перестройки каждого ребра
-
-generator_type - тип генератора, см. по примерам
-
-steps - число шагов
-
-dt - шаг интегрирования (лучше всего 0.1 или 0.01)
