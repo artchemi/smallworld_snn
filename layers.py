@@ -37,36 +37,35 @@ class HiddenLayer:
         :param input_spike:
         :return:
         """
-        assert len(input_spike) == len(self.syn_matrix), 'Размерности матриц должны совпадать!'
-        output_spike = np.zeros(input_spike.shape[0])
+        assert input_spike.shape[1] == len(self.syn_matrix), 'Размерности матриц должны совпадать!'
+        output_spike = np.zeros([input_spike.shape[0], input_spike.shape[1]])
 
-        membrane_potential = []
+        for j in range(0, input_spike.shape[0]):
+            for i in range(0, input_spike.shape[1]):
+                self.neurons[i].step(self.dt, input_spike[j][i], 1)
+                v = self.neurons[i].v
 
-        for i in range(0, len(input_spike)):
-            self.neurons[i].step(self.dt, input_spike[i], 1)
-            v = self.neurons[i].v
+                # membrane_potential.append(v)
 
-            # membrane_potential.append(v)
+                if v >= self.neurons[i].thrs:
+                    output_spike[j][i] = 10.0
+                else:
+                    continue
 
-            if v >= self.neurons[i].thrs:
-                output_spike[i] = 10.0
-            else:
-                continue
+            input_sw = np.dot(a=output_spike, b=self.syn_matrix)
 
-        input_sw = np.dot(a=output_spike, b=self.syn_matrix)
+            for i in range(0, input_sw.shape[1]):
+                self.neurons[i].step(self.dt, input_sw[j][i], 1)
+                v = self.neurons[i].v
 
-        for i in range(0, len(input_sw)):
-            self.neurons[i].step(self.dt, input_sw[i], 1)
-            v = self.neurons[i].v
+                membrane_potential.append(v)
 
-            membrane_potential.append(v)
+                if v >= self.neurons[i].thrs:
+                    output_spike[j][i] = 10.0
+                else:
+                    continue
 
-            if v >= self.neurons[i].thrs:
-                output_spike[i] = 10.0
-            else:
-                continue
-
-        return output_spike, membrane_potential
+        return output_spike, np.reshape(membrane_potential, (input_spike.shape[0], self.n))
 
     def draw_graph(self):
         # ---directed graph---
@@ -159,36 +158,37 @@ class IntraConnectLayer(HiddenLayer):
         :param input_spike:
         :return:
         """
-        assert len(input_spike) == len(self.syn_matrix), 'Размерности матриц должны совпадать!'
-        output_spike = np.zeros(input_spike.shape[0])
+        assert input_spike.shape[1] == len(self.syn_matrix), 'Размерности матриц должны совпадать!'
+        output_spike = np.zeros([input_spike.shape[0], input_spike.shape[1]])
 
         membrane_potential = []
 
-        for i in range(0, len(input_spike)):
-            self.neurons[i].step(self.dt, input_spike[i], 1)
-            v = self.neurons[i].v
+        for j in range(0, input_spike.shape[0]):
+            for i in range(0, input_spike.shape[1]):
+                self.neurons[i].step(self.dt, input_spike[j][i], 1)
+                v = self.neurons[i].v
 
-            # membrane_potential.append(v)
+                # membrane_potential.append(v)
 
-            if v >= self.neurons[i].thrs:
-                output_spike[i] = 10.0
-            else:
-                continue
+                if v >= self.neurons[i].thrs:
+                    output_spike[j][i] = 10.0
+                else:
+                    continue
 
-        input_sw = np.dot(a=output_spike, b=self.syn_matrix)
+            input_sw = np.dot(a=output_spike, b=self.syn_matrix)
 
-        for i in range(0, len(input_sw)):
-            self.neurons[i].step(self.dt, input_sw[i], 1)
-            v = self.neurons[i].v
+            for i in range(0, input_sw.shape[1]):
+                self.neurons[i].step(self.dt, input_sw[j][i], 1)
+                v = self.neurons[i].v
 
-            membrane_potential.append(v)
+                membrane_potential.append(v)
 
-            if v >= self.neurons[i].thrs:
-                output_spike[i] = 10.0
-            else:
-                continue
+                if v >= self.neurons[i].thrs:
+                    output_spike[j][i] = 10.0
+                else:
+                    continue
 
-        return output_spike, membrane_potential
+        return output_spike, np.reshape(membrane_potential, (input_spike.shape[0], self.n))
 
 
 class IntraConnectLayerBio(HiddenLayer):
@@ -322,10 +322,10 @@ def main():
     layer = IntraConnectLayer(n, 10, 0.5)
     layer.from_edges()
 
-    spike_series = spike_generator(n=n, steps=1000, version='1')
+    spike_series = spike_generator(n=n, steps=100, version='1')
 
     for i in tqdm(range(len(spike_series)), ascii=True, desc='forward'):
-        out = layer.intra_forward(spike_series[i])
+        out= layer.intra_forward(spike_series[i])
         # print(i)
 
     # layer.draw_graph()

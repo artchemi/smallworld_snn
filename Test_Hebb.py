@@ -3,8 +3,8 @@ import argparse
 import layers
 from utils import *
 from tqdm import tqdm
+import pandas as pd
 import os
-from Hebb.Tools import Tools
 
 parser = argparse.ArgumentParser(
     description='Основной скрипт для запуска моделирования скрытого слоя в'
@@ -32,7 +32,7 @@ def main():
     # ---name for directory with results---
     random_dir_name = make_random_name(10)
     # ---creating dataframe for input spikes, membrane potential and output spikes---
-    df = create_df(args.n)
+    #df = create_df(args.n)
 
     os.makedirs(random_dir_name)
 
@@ -43,17 +43,16 @@ def main():
 
     print('Saved to folder: ', random_dir_name)
 
-    for i in tqdm(range(len(input_spikes)), ascii=True, desc='forward'):
-        out, mem = hidden_layer.intra_forward(input_spikes[i])
-        df.loc[len(df.index)] = input_spikes[i].tolist() + mem + out.tolist()
+    out, mem = hidden_layer.intra_forward(input_spikes)
+    df = pd.DataFrame(np.concatenate((input_spikes, mem, out), axis=1))
 
-    last_50_columns = df.iloc[:, -args.n:]
-    indexes = last_50_columns.apply(Tools.find_index_of_spikes, args=(10.0,))
+    last_n_columns = df.iloc[:, -args.n:]
+    indexes = last_n_columns.apply(find_index_of_spikes, args=(10.0,))
     indexes.dropna(inplace=True)
     max_len = max(map(len, indexes))
     filled_lists = [list(filter(None, x)) + [np.nan] * (max_len - len(x)) for x in indexes]
 
-    tau_max = Tools.find_tau_max(np.array(filled_lists), args.dt)
+    tau_max = find_tau_max(np.array(filled_lists), args.dt)
     print(f'Tau maximum: {tau_max}')
 
     df_name = f'{random_dir_name}/data_{random_dir_name}.csv'
