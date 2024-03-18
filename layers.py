@@ -40,6 +40,8 @@ class HiddenLayer:
         assert input_spike.shape[1] == len(self.syn_matrix), 'Размерности матриц должны совпадать!'
         output_spike = np.zeros([input_spike.shape[0], input_spike.shape[1]])
 
+        membrane_potential = []
+
         for j in range(0, input_spike.shape[0]):
             for i in range(0, input_spike.shape[1]):
                 self.neurons[i].step(self.dt, input_spike[j][i], 1)
