@@ -230,6 +230,14 @@ def find_tau_max(matrix, dt):
     else:
         return 'No spikes'
 
+def find_indices_above_diagonal(matrix, value):
+    indixes = np.argwhere(np.triu(matrix, k=1) == value)
+    return indixes
+
+def find_indices_above_diagonal(matrix, value):
+    indixes = np.argwhere(np.triu(matrix, k=1) == value)
+    return indixes
+
 def main():
     df_name = 'hidden_neurons/data_mem.csv'
     # plot_neurons_demo(df_name=df_name)

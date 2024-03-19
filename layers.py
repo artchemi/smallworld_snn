@@ -6,6 +6,7 @@ from neurons import IZHI
 import os
 import pandas as pd
 from tqdm import tqdm
+from utils import *
 
 
 class InputLayer:
@@ -163,7 +164,9 @@ class IntraConnectLayer(HiddenLayer):
         assert input_spike.shape[1] == len(self.syn_matrix), 'Размерности матриц должны совпадать!'
         output_spike = np.zeros([input_spike.shape[0], input_spike.shape[1]])
 
+        neurons = find_indices_above_diagonal(self.syn_matrix, 10)
         membrane_potential = []
+        spikes_indexes = [[] for _ in range(self.n)]
 
         for j in range(0, input_spike.shape[0]):
             for i in range(0, input_spike.shape[1]):
@@ -174,6 +177,9 @@ class IntraConnectLayer(HiddenLayer):
 
                 if v >= self.neurons[i].thrs:
                     output_spike[j][i] = 10.0
+                    if :
+                    else:
+                        spikes_indexes[i].append(j)
                 else:
                     continue
 
@@ -190,7 +196,17 @@ class IntraConnectLayer(HiddenLayer):
                 else:
                     continue
 
-        return output_spike, np.reshape(membrane_potential, (input_spike.shape[0], self.n))
+        output_spike = pd.DataFrame(output_spike)
+        indexes = output_spike.apply(find_index_of_spikes, args=(10.0,))
+        indexes.dropna(inplace=True)
+        if indexes.empty == False:
+            max_len = max(map(len, indexes))
+            filled_lists = [list(filter(None, x)) + [np.nan] * (max_len - len(x)) for x in indexes]
+            tau_max = find_tau_max(np.array(filled_lists), self.dt)
+        else:
+            tau_max = np.nan
+
+        return output_spike, np.reshape(membrane_potential, (input_spike.shape[0], self.n)), tau_max, pd.DataFrame(self.syn_matrix)
 
 
 class IntraConnectLayerBio(HiddenLayer):

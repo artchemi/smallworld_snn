@@ -43,20 +43,13 @@ def main():
 
     print('Saved to folder: ', random_dir_name)
 
-    out, mem = hidden_layer.intra_forward(input_spikes)
+    out, mem, tau_max, syn_matrix = hidden_layer.intra_forward(input_spikes)
     df = pd.DataFrame(np.concatenate((input_spikes, mem, out), axis=1))
 
-    last_n_columns = df.iloc[:, -args.n:]
-    indexes = last_n_columns.apply(find_index_of_spikes, args=(10.0,))
-    indexes.dropna(inplace=True)
-    max_len = max(map(len, indexes))
-    filled_lists = [list(filter(None, x)) + [np.nan] * (max_len - len(x)) for x in indexes]
-
-    tau_max = find_tau_max(np.array(filled_lists), args.dt)
-    print(f'Tau maximum: {tau_max}')
-
     df_name = f'{random_dir_name}/data_{random_dir_name}.csv'
+    df_name1 = f'{random_dir_name}/syn_{random_dir_name}.csv'
     df.to_csv(df_name, index=False)
+    syn_matrix.to_csv(df_name1, index=False)
 
     # ---draw heatmap and save image---
     plot_heatmap(df_name, random_dir_name)
