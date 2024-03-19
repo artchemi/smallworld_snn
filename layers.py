@@ -177,7 +177,16 @@ class IntraConnectLayer(HiddenLayer):
 
                 if v >= self.neurons[i].thrs:
                     output_spike[j][i] = 10.0
-                    if :
+                    if i in neurons[:, 1]:
+                        filtered_rows = neurons[neurons[:, 1] == i]
+                        pre_synapse_neuron = filtered_rows[:, 0]
+                        for item in pre_synapse_neuron:
+                            for number in spikes_indexes[item]:
+                                if len(spikes_indexes[item]) != 0:
+                                    self.syn_matrix[item][i] += intralayer_hebbian(number, j, 0.1, 0.1, self.dt)
+                                    spikes_indexes[item] = []
+                                else:
+                                    continue
                     else:
                         spikes_indexes[i].append(j)
                 else:
@@ -193,6 +202,18 @@ class IntraConnectLayer(HiddenLayer):
 
                 if v >= self.neurons[i].thrs:
                     output_spike[j][i] = 10.0
+                    if i in neurons[:, 1]:
+                        filtered_rows = neurons[neurons[:, 1] == i]
+                        pre_synapse_neuron = filtered_rows[:, 0]
+                        for item in pre_synapse_neuron:
+                            for number in spikes_indexes[item]:
+                                if len(spikes_indexes[item]) != 0:
+                                    self.syn_matrix[item][i] += intralayer_hebbian(number, j, 0.1, 0.1, self.dt)
+                                    spikes_indexes[item] = []
+                                else:
+                                    continue
+                    else:
+                        spikes_indexes[i].append(j)
                 else:
                     continue
 
@@ -206,7 +227,8 @@ class IntraConnectLayer(HiddenLayer):
         else:
             tau_max = np.nan
 
-        return output_spike, np.reshape(membrane_potential, (input_spike.shape[0], self.n)), tau_max, pd.DataFrame(self.syn_matrix)
+        return (output_spike, np.reshape(membrane_potential, (input_spike.shape[0], self.n)),
+                tau_max, pd.DataFrame(self.syn_matrix))
 
 
 class IntraConnectLayerBio(HiddenLayer):
