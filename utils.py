@@ -251,9 +251,8 @@ def intralayer_hebbian(t_1, t_2, t_max, sigma_max, dt):
     формуле Хэбба и ограниченное в диапазоне [-sigma_max, sigma_max].
     """
 
-    if t_1 - t_2 >= t_max:
-        raise ValueError('Spikes time difference cannot be more or equal to the t_max. '
-                         'Increase t_max parameter')
+    if (t_1 - t_2) * dt >= t_max:
+        raise ValueError('Increase t_max parameter')
 
     calculation = (- 0.5 * np.log(((t_1 - t_2) * dt) / (t_max - ((t_1 - t_2) * dt)))) * sigma_max / 3.57
     return np.clip(calculation, a_min=-sigma_max, a_max=sigma_max)

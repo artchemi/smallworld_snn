@@ -206,7 +206,7 @@ class IntraConnectLayer(HiddenLayer):
                             # уменьшение связи по правилу STDP
                             continue
                         else:
-                            coeff = intralayer_hebbian(post_spyke_step, pre_spyke_step, 20, 0.1, self.dt)
+                            coeff = intralayer_hebbian(post_spyke_step, pre_spyke_step, 5, 0.1, self.dt)
                             self.syn_matrix[pre_spyke_neuron][key] += coeff
                             weight_corr_history.append(f'Coef: {coeff}, Index: {pre_spyke_neuron, key}')
 
@@ -220,7 +220,7 @@ class IntraConnectLayer(HiddenLayer):
                                 # уменьшение связи по правилу STDP
                                 continue
                             else:
-                                coeff = intralayer_hebbian(post_spyke_step, pre_spyke_step, 20, 0.1, self.dt)
+                                coeff = intralayer_hebbian(post_spyke_step, pre_spyke_step, 5, 0.1, self.dt)
                                 self.syn_matrix[pre_spyke_neuron][key] += coeff
                                 weight_corr_history.append(f'Coef: {coeff}, Index: {pre_spyke_neuron, key}')
                         else:
@@ -239,8 +239,11 @@ class IntraConnectLayer(HiddenLayer):
         else:
             tau_max = np.nan
 
+
+        print(weight_corr_history)
+
         return (output_spike, np.reshape(membrane_potential, (input_spike.shape[0], self.n)),
-                tau_max, pd.DataFrame(self.syn_matrix)), weight_corr_history
+                tau_max, pd.DataFrame(self.syn_matrix))
 
 
 class IntraConnectLayerBio(HiddenLayer):

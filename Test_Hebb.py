@@ -44,7 +44,7 @@ def main():
 
     print('Saved to folder: ', random_dir_name)
 
-    out, mem, tau_max, syn_matrix, weight = hidden_layer.intra_forward(input_spikes)
+    out, mem, tau_max, syn_matrix = hidden_layer.intra_forward(input_spikes)
     df = pd.DataFrame(np.concatenate((input_spikes, mem, out), axis=1))
 
     df_name = f'{random_dir_name}/data_{random_dir_name}.csv'
@@ -52,13 +52,10 @@ def main():
     df.to_csv(df_name, index=False)
     syn_matrix.to_csv(df_name1, index=False)
 
-    # Открываем файл для записи
-    with open(f'{random_dir_name}/corr_{random_dir_name}.csv', "w", newline="") as file:
-        csv_writer = csv.writer(file)
-
-        # Записываем каждую строку списка в файл CSV
-        for row in weight:
-            csv_writer.writerow(row)
+    #with open(f'{random_dir_name}/corr_{random_dir_name}.csv', "w", newline="") as file:
+        #csv_writer = csv.writer(file)
+        #for row in weight:
+            #csv_writer.writerow(row)
 
     # ---draw heatmap and save image---
     plot_heatmap(df_name, random_dir_name)
