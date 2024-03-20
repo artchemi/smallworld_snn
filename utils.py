@@ -258,6 +258,18 @@ def intralayer_hebbian(t_1, t_2, t_max, sigma_max, dt):
     calculation = (- 0.5 * np.log(((t_1 - t_2) * dt) / (t_max - ((t_1 - t_2) * dt)))) * sigma_max / 3.57
     return np.clip(calculation, a_min=-sigma_max, a_max=sigma_max)
 
+def dict_with_connections(connections):
+    unique_values_mapping = {}
+
+    for row in connections:
+        key = tuple(row)
+        if key[1] not in unique_values_mapping:
+            unique_values_mapping[key[1]] = [key[0]]
+        else:
+            unique_values_mapping[key[1]].append(key[0])
+
+    return unique_values_mapping
+
 def main():
     df_name = 'hidden_neurons/data_mem.csv'
     # plot_neurons_demo(df_name=df_name)

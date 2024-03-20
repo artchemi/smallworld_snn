@@ -164,7 +164,7 @@ class IntraConnectLayer(HiddenLayer):
         assert input_spike.shape[1] == len(self.syn_matrix), 'Размерности матриц должны совпадать!'
         output_spike = np.zeros([input_spike.shape[0], input_spike.shape[1]])
 
-        neurons = find_indices_above_diagonal(self.syn_matrix, 10)
+        connection = find_indices_above_diagonal(self.syn_matrix, 10)
         membrane_potential = []
         spikes_indexes = [[] for _ in range(self.n)]
 
@@ -177,18 +177,6 @@ class IntraConnectLayer(HiddenLayer):
 
                 if v >= self.neurons[i].thrs:
                     output_spike[j][i] = 10.0
-                    if i in neurons[:, 1]:
-                        filtered_rows = neurons[neurons[:, 1] == i]
-                        pre_synapse_neuron = filtered_rows[:, 0]
-                        for item in pre_synapse_neuron:
-                            for number in spikes_indexes[item]:
-                                if len(spikes_indexes[item]) != 0:
-                                    self.syn_matrix[item][i] += intralayer_hebbian(number, j, 0.1, 0.1, self.dt)
-                                    spikes_indexes[item] = []
-                                else:
-                                    continue
-                    else:
-                        spikes_indexes[i].append(j)
                 else:
                     continue
 
@@ -202,20 +190,43 @@ class IntraConnectLayer(HiddenLayer):
 
                 if v >= self.neurons[i].thrs:
                     output_spike[j][i] = 10.0
-                    if i in neurons[:, 1]:
-                        filtered_rows = neurons[neurons[:, 1] == i]
-                        pre_synapse_neuron = filtered_rows[:, 0]
-                        for item in pre_synapse_neuron:
-                            for number in spikes_indexes[item]:
-                                if len(spikes_indexes[item]) != 0:
-                                    self.syn_matrix[item][i] += intralayer_hebbian(number, j, 0.1, 0.1, self.dt)
-                                    spikes_indexes[item] = []
-                                else:
-                                    continue
-                    else:
-                        spikes_indexes[i].append(j)
+                    spikes_indexes[i].append(j)
                 else:
                     continue
+
+        connections = dict_with_connections(connection)
+
+        for key in connections.keys():
+            if len(spikes_indexes[key]) == 1:
+                post_spyke_step = spikes_indexes[key][-1]
+                for pre_spyke_neuron in connections[key]:
+                    for pre_spyke_step in spikes_indexes[pre_spyke_neuron]:
+                        if pre_spyke_step > post_spyke_step:
+                            # уменьшение связи по правилу STDP
+                            continue
+                        else:
+                            coeff = intralayer_hebbian(post_spyke_step, pre_spyke_step, 10, 0.1, self.dt)
+                            self.syn_matrix[pre_spyke_neuron][key] += coeff
+                            print(coeff, pre_spyke_neuron, key)
+
+            elif len(spikes_indexes[key]) > 1:
+                post_spyke_step = spikes_indexes[key][-1]
+                limit = spikes_indexes[key][-2]
+                for pre_spyke_neuron in connections[key]:
+                    for pre_spyke_step in spikes_indexes[pre_spyke_neuron]:
+                        if pre_spyke_step > limit:
+                            if pre_spyke_step > post_spyke_step:
+                                # уменьшение связи по правилу STDP
+                                continue
+                            else:
+                                coeff = intralayer_hebbian(post_spyke_step, pre_spyke_step, 10, 0.1, self.dt)
+                                self.syn_matrix[pre_spyke_neuron][key] += coeff
+                                print(coeff, pre_spyke_neuron, key)
+                        else:
+                            continue
+
+            else:
+                continue
 
         output_spike = pd.DataFrame(output_spike)
         indexes = output_spike.apply(find_index_of_spikes, args=(10.0,))
