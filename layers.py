@@ -195,6 +195,7 @@ class IntraConnectLayer(HiddenLayer):
                     continue
 
         connections = dict_with_connections(connection)
+        weight_corr_history = []
 
         for key in connections.keys():
             if len(spikes_indexes[key]) == 1:
@@ -205,9 +206,9 @@ class IntraConnectLayer(HiddenLayer):
                             # уменьшение связи по правилу STDP
                             continue
                         else:
-                            coeff = intralayer_hebbian(post_spyke_step, pre_spyke_step, 10, 0.1, self.dt)
+                            coeff = intralayer_hebbian(post_spyke_step, pre_spyke_step, 20, 0.1, self.dt)
                             self.syn_matrix[pre_spyke_neuron][key] += coeff
-                            print(coeff, pre_spyke_neuron, key)
+                            weight_corr_history.append(f'Coef: {coeff}, Index: {pre_spyke_neuron, key}')
 
             elif len(spikes_indexes[key]) > 1:
                 post_spyke_step = spikes_indexes[key][-1]
@@ -219,9 +220,9 @@ class IntraConnectLayer(HiddenLayer):
                                 # уменьшение связи по правилу STDP
                                 continue
                             else:
-                                coeff = intralayer_hebbian(post_spyke_step, pre_spyke_step, 10, 0.1, self.dt)
+                                coeff = intralayer_hebbian(post_spyke_step, pre_spyke_step, 20, 0.1, self.dt)
                                 self.syn_matrix[pre_spyke_neuron][key] += coeff
-                                print(coeff, pre_spyke_neuron, key)
+                                weight_corr_history.append(f'Coef: {coeff}, Index: {pre_spyke_neuron, key}')
                         else:
                             continue
 
@@ -239,7 +240,7 @@ class IntraConnectLayer(HiddenLayer):
             tau_max = np.nan
 
         return (output_spike, np.reshape(membrane_potential, (input_spike.shape[0], self.n)),
-                tau_max, pd.DataFrame(self.syn_matrix))
+                tau_max, pd.DataFrame(self.syn_matrix)), weight_corr_history
 
 
 class IntraConnectLayerBio(HiddenLayer):
