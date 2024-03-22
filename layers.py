@@ -9,7 +9,66 @@ from tqdm import tqdm
 
 
 class InputLayer:
-    def __init__(self):
+    """
+    Класс для входного слоя
+    """
+    def __init__(self, amount_neurons_in: int, amount_neurons_out: int, dtau: float) -> None:
+        """
+        Конструктор класса
+
+        Args:
+            amount_neurons_in (int): число нейронов во входном слое
+            amount_neurons_out (int): число нейронов в следующем слое
+            dtau (float): шаг интегрирования
+        """
+        self.neurons = []
+        # Инициализация связей между входным и скрытым слоями
+        self.syn_matrix = np.random.random(size=(amount_neurons_in, amount_neurons_out))  
+        # self.syn_matrix = np.full(shape=(amount_neurons_in, amount_neurons_out), fill_value=10.0)
+        self.dt = dtau
+
+        while len(self.neurons) < amount_neurons_in:
+            self.neurons.append(IZHI())
+
+
+    def forward(self, input_spike: np.ndarray):
+        """
+        Функция прямого распротранения
+
+        Args:
+            input_spike (np.ndarray): входные спайки
+
+        Returns:
+            np.dot(output_spike, self.syn_matrix): спайки для следующего слоя
+            memdrane_potential (np.ndarray): мембранный потенциал за все итерации
+        """
+        output_spike = np.zeros(input_spike.shape[0])
+
+        membrane_potential = []
+
+        for i in range(0, len(input_spike)):
+            self.neurons[i].step(self.dt, input_spike[i], 1)
+            v = self.neurons[i].v
+
+            membrane_potential.append(v)
+
+            if v >= self.neurons[i].thrs:
+                output_spike[i] = 10.0
+            else:
+                continue
+
+        return np.dot(output_spike, self.syn_matrix), membrane_potential
+    
+
+class OutputLayer:
+    """
+    Класс для выходного слоя
+    """
+    def __init__(self) -> None:
+        
+        self.neurons = []
+
+    def forward(self):
         pass
 
 
@@ -162,7 +221,7 @@ class IntraConnectLayer(HiddenLayer):
         Returns:
             _type_: _description_
         """
-        assert len(input_spike) == len(self.syn_matrix), 'Размерности матриц должны совпадать!'
+        # assert len(input_spike) == len(self.syn_matrix), 'Размерности матриц должны совпадать!'
         output_spike = np.zeros(input_spike.shape[0])
 
         membrane_potential = []
