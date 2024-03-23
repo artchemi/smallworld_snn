@@ -210,11 +210,37 @@ def create_df(n: int) -> pd.DataFrame:
 
 
 def find_index_of_spikes(column, spike_value):
+
+    '''
+    Функция для нахождения индексов нейронов, у которых был спайк
+
+    :param column: колонка для нахождения индексов
+    :param spike_value: значнеие спайка
+
+    :return:
+    np.array с индексами нейронов, где был спайк
+    или np.nan если спайков не было
+    '''
+
     index = column[column == spike_value].index
     return np.array(index) if not index.empty else np.nan
 
 
 def find_tau_max(matrix, dt):
+
+    '''
+    Функция для подсчета tau_max для функции Hebb
+
+    Params:
+
+    matrix (np.array): матрица со спайкам
+    dt (float): Integral step
+
+    Returns:
+    Параметр tau_max - Среднее время между
+    спайками умноженное на 2
+    'No spikes' если спайков в матрице нет
+    '''
 
     count = 0
     sum_diff = 0
@@ -230,11 +256,7 @@ def find_tau_max(matrix, dt):
     else:
         return 'No spikes'
 
-def find_indices_above_diagonal(matrix, value):
-    indixes = np.argwhere(np.triu(matrix, k=1) == value)
-    return indixes
-
-def intralayer_hebbian(t_1, t_2, t_max, sigma_max, dt):
+def intralayer_hebbian(t_1, t_2, tau_max, sigma_max, dt):
 
     """
     Функция intralayer_hebbian расчитывает весовой коэффициент между двумя нейронами в слое с помощью правила Хэбба.
@@ -251,16 +273,34 @@ def intralayer_hebbian(t_1, t_2, t_max, sigma_max, dt):
     формуле Хэбба и ограниченное в диапазоне [-sigma_max, sigma_max].
     """
 
-    if (t_1 - t_2) * dt >= t_max:
+    if (t_1 - t_2) * dt >= tau_max:
         raise ValueError('Increase t_max parameter')
 
-    calculation = (- 0.5 * np.log(((t_1 - t_2) * dt) / (t_max - ((t_1 - t_2) * dt)))) * sigma_max / 3.57
+    calculation = (- 0.5 * np.log(((t_1 - t_2) * dt) / (tau_max - ((t_1 - t_2) * dt)))) * sigma_max / 3.57
     return np.clip(calculation, a_min=-sigma_max, a_max=sigma_max)
 
-def dict_with_connections(connections):
+def dict_with_connections(matrix, value):
+
+    '''
+    Функция для получения словаря с нейронами, у которых
+    однонаправленная связь (выше диагонали).
+    Ключ - постсинаптический нейрон, значения - пресинаптический
+
+    Params:
+
+    matrix (np.array): Матрица со значениями весов
+    value (float): Значение весов
+
+    Returns:
+    unique_values_mapping (Dict): Словарь с индексами
+    нейронов, у которых присутсвует однонаправленная связь.
+    '''
+
+    indixes = np.argwhere(np.triu(matrix, k=1) == value)
+
     unique_values_mapping = {}
 
-    for row in connections:
+    for row in indixes:
         key = tuple(row)
         if key[1] not in unique_values_mapping:
             unique_values_mapping[key[1]] = [key[0]]

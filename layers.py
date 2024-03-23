@@ -164,7 +164,6 @@ class IntraConnectLayer(HiddenLayer):
         assert input_spike.shape[1] == len(self.syn_matrix), 'Размерности матриц должны совпадать!'
         output_spike = np.zeros([input_spike.shape[0], input_spike.shape[1]])
 
-        connection = find_indices_above_diagonal(self.syn_matrix, 10)
         membrane_potential = []
         spikes_indexes = [[] for _ in range(self.n)]
 
@@ -194,8 +193,22 @@ class IntraConnectLayer(HiddenLayer):
                 else:
                     continue
 
-        connections = dict_with_connections(connection)
+        # Функция dict_with_connections должна быть вне цикла!
+        # При коррекции веса, если он был изменен с 10, она пропустит
+        # эту пару нейронов
+
+        connections = dict_with_connections(self.syn_matrix, 10)
         weight_corr_history = []
+
+        output_spike = pd.DataFrame(output_spike)
+        indexes = output_spike.apply(find_index_of_spikes, args=(10.0,))
+        indexes.dropna(inplace=True)
+        if indexes.empty == False:
+            max_len = max(map(len, indexes))
+            filled_lists = [list(filter(None, x)) + [np.nan] * (max_len - len(x)) for x in indexes]
+            tau_max = find_tau_max(np.array(filled_lists), self.dt)
+        else:
+            tau_max = np.nan
 
         for key in connections.keys():
             if len(spikes_indexes[key]) == 1:
@@ -206,7 +219,7 @@ class IntraConnectLayer(HiddenLayer):
                             # уменьшение связи по правилу STDP
                             continue
                         else:
-                            coeff = intralayer_hebbian(post_spyke_step, pre_spyke_step, 5, 0.1, self.dt)
+                            coeff = intralayer_hebbian(post_spyke_step, pre_spyke_step, tau_max, 0.1, self.dt)
                             self.syn_matrix[pre_spyke_neuron][key] += coeff
                             weight_corr_history.append(f'Coef: {coeff}, Index: {pre_spyke_neuron, key}')
 
@@ -228,16 +241,6 @@ class IntraConnectLayer(HiddenLayer):
 
             else:
                 continue
-
-        output_spike = pd.DataFrame(output_spike)
-        indexes = output_spike.apply(find_index_of_spikes, args=(10.0,))
-        indexes.dropna(inplace=True)
-        if indexes.empty == False:
-            max_len = max(map(len, indexes))
-            filled_lists = [list(filter(None, x)) + [np.nan] * (max_len - len(x)) for x in indexes]
-            tau_max = find_tau_max(np.array(filled_lists), self.dt)
-        else:
-            tau_max = np.nan
 
 
         print(weight_corr_history)
