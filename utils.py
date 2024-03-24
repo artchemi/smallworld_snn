@@ -311,6 +311,7 @@ def dict_with_connections(matrix, value):
     Returns:
     unique_values_mapping (Dict): Словарь с индексами
     нейронов, у которых присутсвует однонаправленная связь.
+    Ключ - постсинаптический нейрон, значения - пресинаптический
     '''
 
     indixes = np.argwhere(np.triu(matrix, k=1) == value)
@@ -329,6 +330,28 @@ def dict_with_connections(matrix, value):
 def weight_correction_hebb(connections: dict, spikes_indexes: list,
                            syn_matrix: np.array, tau_max: float,
                            dt: float, sigma_max: float):
+
+    '''
+    Функция для редактирования матрицы весов
+    по правилу Хебба
+
+
+    :param connections (Dict): Словарь с индексами
+    нейронов, у которых присутсвует однонаправленная связь.
+    Ключ - постсинаптический нейрон, значения - пресинаптический
+    :param spikes_indexes (list of lists): Список списков с номерами
+    шагов, когда у нейронов был спайк
+    :param syn_matrix (np.array): Матрица весов
+    :param tau_max: Максимальное время между спайками нейронов
+    :param dt: Integral step
+    :param sigma_max: Максимальное значение весового коэффициента.
+
+    :return:
+    syn_matrix (np.array)- отредактированная матрица весов
+    weight_corr_history (list) - список со значениями
+    коэффициента коррекции весов и индексами нейронов,
+    для которых этот коэффициент был применен
+    '''
 
     weight_corr_history = []
 
