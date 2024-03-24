@@ -233,7 +233,7 @@ class IntraConnectLayer(HiddenLayer):
                                 # уменьшение связи по правилу STDP
                                 continue
                             else:
-                                coeff = intralayer_hebbian(post_spyke_step, pre_spyke_step, 5, 0.1, self.dt)
+                                coeff = intralayer_hebbian(post_spyke_step, pre_spyke_step, tau_max, 0.1, self.dt)
                                 self.syn_matrix[pre_spyke_neuron][key] += coeff
                                 weight_corr_history.append(f'Coef: {coeff}, Index: {pre_spyke_neuron, key}')
                         else:

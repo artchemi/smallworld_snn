@@ -58,7 +58,7 @@ def main():
             #csv_writer.writerow(row)
 
     # ---draw heatmap and save image---
-    plot_heatmap(df_name, random_dir_name)
+    plot_heatmap_2_0(membrane_matrix=mem, inp_matrix=input_spikes, dir_name=random_dir_name)
     # ---draw graph and save image---
     hidden_layer.draw_graph()
 

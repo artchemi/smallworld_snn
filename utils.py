@@ -174,6 +174,24 @@ def plot_heatmap(df_name: str, dir_name: str) -> None:
     plt.savefig(f'{dir_name}/heatmap.png', dpi=300, format='PNG')
     plt.show()
 
+def plot_heatmap_2_0(membrane_matrix, inp_matrix, dir_name: str) -> None:
+
+
+    plt.subplot(2, 1, 1)
+    sns.heatmap(membrane_matrix, cmap='plasma')
+    plt.xlabel('Time steps, ms')
+    plt.ylabel('Neuron`s index')
+
+    plt.subplot(2, 1, 2)
+    sns.heatmap(inp_matrix, cmap='Greys')
+    plt.xlabel('Time steps, ms')
+    plt.ylabel('Neuron`s index')
+
+    plt.tight_layout()
+    plt.savefig(f'{dir_name}/heatmap.png', dpi=300, format='PNG')
+    plt.show()
+
+
 
 def make_random_name(size: int) -> str:
     name = []
