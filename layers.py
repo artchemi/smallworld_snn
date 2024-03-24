@@ -198,7 +198,6 @@ class IntraConnectLayer(HiddenLayer):
         # эту пару нейронов
 
         connections = dict_with_connections(self.syn_matrix, 10)
-        weight_corr_history = []
 
         output_spike = pd.DataFrame(output_spike)
         indexes = output_spike.apply(find_index_of_spikes, args=(10.0,))
@@ -210,38 +209,9 @@ class IntraConnectLayer(HiddenLayer):
         else:
             tau_max = np.nan
 
-        for key in connections.keys():
-            if len(spikes_indexes[key]) == 1:
-                post_spyke_step = spikes_indexes[key][-1]
-                for pre_spyke_neuron in connections[key]:
-                    for pre_spyke_step in spikes_indexes[pre_spyke_neuron]:
-                        if pre_spyke_step > post_spyke_step:
-                            # уменьшение связи по правилу STDP
-                            continue
-                        else:
-                            coeff = intralayer_hebbian(post_spyke_step, pre_spyke_step, tau_max, 0.1, self.dt)
-                            self.syn_matrix[pre_spyke_neuron][key] += coeff
-                            weight_corr_history.append(f'Coef: {coeff}, Index: {pre_spyke_neuron, key}')
-
-            elif len(spikes_indexes[key]) > 1:
-                post_spyke_step = spikes_indexes[key][-1]
-                limit = spikes_indexes[key][-2]
-                for pre_spyke_neuron in connections[key]:
-                    for pre_spyke_step in spikes_indexes[pre_spyke_neuron]:
-                        if pre_spyke_step > limit:
-                            if pre_spyke_step > post_spyke_step:
-                                # уменьшение связи по правилу STDP
-                                continue
-                            else:
-                                coeff = intralayer_hebbian(post_spyke_step, pre_spyke_step, tau_max, 0.1, self.dt)
-                                self.syn_matrix[pre_spyke_neuron][key] += coeff
-                                weight_corr_history.append(f'Coef: {coeff}, Index: {pre_spyke_neuron, key}')
-                        else:
-                            continue
-
-            else:
-                continue
-
+        self.syn_matrix, weight_corr_history = weight_correction_hebb(connections, spikes_indexes,
+                                                                      self.syn_matrix, tau_max,
+                                                                      self.dt, 0.1)
 
         print(weight_corr_history)
 

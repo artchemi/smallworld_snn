@@ -192,7 +192,6 @@ def plot_heatmap_2_0(membrane_matrix, inp_matrix, dir_name: str) -> None:
     plt.show()
 
 
-
 def make_random_name(size: int) -> str:
     name = []
 
@@ -326,6 +325,46 @@ def dict_with_connections(matrix, value):
             unique_values_mapping[key[1]].append(key[0])
 
     return unique_values_mapping
+
+def weight_correction_hebb(connections: dict, spikes_indexes: list,
+                           syn_matrix: np.array, tau_max: float,
+                           dt: float, sigma_max: float):
+
+    weight_corr_history = []
+
+    for key in connections.keys():
+        if len(spikes_indexes[key]) == 1:
+            post_spyke_step = spikes_indexes[key][-1]
+            for pre_spyke_neuron in connections[key]:
+                for pre_spyke_step in spikes_indexes[pre_spyke_neuron]:
+                    if pre_spyke_step > post_spyke_step:
+                        # уменьшение связи по правилу STDP
+                        continue
+                    else:
+                        coeff = intralayer_hebbian(post_spyke_step, pre_spyke_step, tau_max, sigma_max, dt)
+                        syn_matrix[pre_spyke_neuron][key] += coeff
+                        weight_corr_history.append(f'Coef: {coeff}, Index: {pre_spyke_neuron, key}')
+
+        elif len(spikes_indexes[key]) > 1:
+            post_spyke_step = spikes_indexes[key][-1]
+            limit = spikes_indexes[key][-2]
+            for pre_spyke_neuron in connections[key]:
+                for pre_spyke_step in spikes_indexes[pre_spyke_neuron]:
+                    if pre_spyke_step > limit:
+                        if pre_spyke_step > post_spyke_step:
+                            # уменьшение связи по правилу STDP
+                            continue
+                        else:
+                            coeff = intralayer_hebbian(post_spyke_step, pre_spyke_step, tau_max, sigma_max, dt)
+                            syn_matrix[pre_spyke_neuron][key] += coeff
+                            weight_corr_history.append(f'Coef: {coeff}, Index: {pre_spyke_neuron, key}')
+                    else:
+                        continue
+
+        else:
+            continue
+
+    return syn_matrix, weight_corr_history
 
 def main():
     df_name = 'hidden_neurons/data_mem.csv'
