@@ -89,15 +89,16 @@ class HiddenLayer:
 
         nx.draw_networkx(g, pos=pos, with_labels=True, **self.node_opts)
         # nx.draw_networkx(self.graph, **self.node_opts)
-        plt.savefig(f'{self.name}/graph.png', dpi=300, format='PNG')
-
+        # plt.savefig(f'{self.name}/graph.png', dpi=300, format='PNG')
+    def get_connectivity(self) -> pd.DataFrame:
+        return pd.DataFrame(self.syn_matrix)
 
 class IntraConnectLayer(HiddenLayer):
     """
 
     """
 
-    def __init__(self, amount_neurons: int, k_neighbours: int, probability: float, dtau: float, name: str) -> None:
+    def __init__(self, amount_neurons: int, k_neighbours: int, probability: float, dtau: float) -> None:
         """
         Конструктор класса
         :param amount_neurons: (int) - общее число нейронов в слое
@@ -115,7 +116,7 @@ class IntraConnectLayer(HiddenLayer):
 
         self.dt = dtau
 
-        self.name = name
+        #self.name = name
 
         self.syn_matrix = np.zeros((self.n, self.n), dtype=np.float64)
 
@@ -126,7 +127,6 @@ class IntraConnectLayer(HiddenLayer):
         while len(self.neurons) < self.n:
             self.neurons.append(IZHI())
 
-    @Decorators.benchmark
     def from_edges(self, double_percent=0.05) -> None:
         """
 
@@ -136,7 +136,7 @@ class IntraConnectLayer(HiddenLayer):
         """
         pairs = list(self.graph.edges)
         for pair in pairs:
-            self.syn_matrix[pair[0], pair[1]] = 10.0
+            self.syn_matrix[pair[0], pair[1]] = 250.0   # Инициализация связей
             # self.syn_matrix[pair[0], pair[1]] = np.round(np.random.rand(1)[0], 3)
 
         n_double = np.round(len(pairs) * double_percent)
@@ -150,10 +150,10 @@ class IntraConnectLayer(HiddenLayer):
             choices_edge = pairs_copy[rand_edge_index]
             pairs_copy.pop(rand_edge_index)
 
-            self.syn_matrix[choices_edge[1], choices_edge[0]] = np.round(np.random.rand(1)[0], 3)
+            self.syn_matrix[choices_edge[1], choices_edge[0]] = np.round(np.random.randint(250, size=1)[0], 3)
             counter_double += 1
 
-        print('Amount of double edges: ', np.round(len(pairs) * double_percent))
+        print('Количество двойных связей: ', np.round(len(pairs) * double_percent))
 
     def intra_forward(self, input_spike: np.ndarray):
         """
@@ -176,6 +176,7 @@ class IntraConnectLayer(HiddenLayer):
 
                 if v >= self.neurons[i].thrs:
                     output_spike[j][i] = 10.0
+                    spikes_indexes[i].append(j)
                 else:
                     continue
 
@@ -197,7 +198,7 @@ class IntraConnectLayer(HiddenLayer):
         # При коррекции веса, если он был изменен с 10, она пропустит
         # эту пару нейронов
 
-        connections = dict_with_connections(self.syn_matrix, 10)
+        connections = dict_with_connections(self.syn_matrix, 250)
 
         output_spike = pd.DataFrame(output_spike)
         indexes = output_spike.apply(find_index_of_spikes, args=(10.0,))
@@ -211,7 +212,7 @@ class IntraConnectLayer(HiddenLayer):
 
         self.syn_matrix, weight_corr_history = weight_correction_hebb(connections, spikes_indexes,
                                                                       self.syn_matrix, tau_max,
-                                                                      self.dt, 0.1)
+                                                                      self.dt, 10)
 
         print(weight_corr_history)
 

@@ -174,22 +174,25 @@ def plot_heatmap(df_name: str, dir_name: str) -> None:
     plt.savefig(f'{dir_name}/heatmap.png', dpi=300, format='PNG')
     plt.show()
 
-def plot_heatmap_2_0(membrane_matrix, inp_matrix, dir_name: str) -> None:
+def plot_heatmap_2_0(membrane_matrix, inp_matrix, dir_name = None) -> None:
 
 
     plt.subplot(2, 1, 1)
-    sns.heatmap(membrane_matrix, cmap='plasma')
+    sns.heatmap(membrane_matrix.T, cmap='plasma')
     plt.xlabel('Time steps, ms')
     plt.ylabel('Neuron`s index')
 
     plt.subplot(2, 1, 2)
-    sns.heatmap(inp_matrix, cmap='Greys')
+    sns.heatmap(inp_matrix.T, cmap='Greys')
     plt.xlabel('Time steps, ms')
     plt.ylabel('Neuron`s index')
 
     plt.tight_layout()
-    plt.savefig(f'{dir_name}/heatmap.png', dpi=300, format='PNG')
     plt.show()
+
+    if dir_name:
+        plt.savefig(f'{dir_name}/heatmap.png', dpi=300, format='PNG')
+
 
 
 def make_random_name(size: int) -> str:
@@ -368,9 +371,13 @@ def weight_correction_hebb(connections: dict, spikes_indexes: list,
                         syn_matrix[pre_spyke_neuron][key] += coeff
                         weight_corr_history.append(f'Coef: {coeff}, Index: {pre_spyke_neuron, key}')
 
+
+        # ОШИБКА В АЛГОРИТМЕ!!!
         elif len(spikes_indexes[key]) > 1:
+            # ВОТ ТУТ (берет только последние два)
             post_spyke_step = spikes_indexes[key][-1]
             limit = spikes_indexes[key][-2]
+            # ВОТ ТУТ
             for pre_spyke_neuron in connections[key]:
                 for pre_spyke_step in spikes_indexes[pre_spyke_neuron]:
                     if pre_spyke_step > limit:
@@ -388,6 +395,70 @@ def weight_correction_hebb(connections: dict, spikes_indexes: list,
             continue
 
     return syn_matrix, weight_corr_history
+
+def plot_mem(df: pd.DataFrame) -> None:
+    columns = df.columns
+    new_columns_mem = {}
+    col_mem_lst = []
+
+    for col_name in columns:
+        if 'neuron_' in col_name:
+            new_col_name = col_name.replace('out_spike_', '')
+            new_columns_mem[f'{col_name}'] = new_col_name
+
+            col_mem_lst.append(new_col_name)
+
+        else:
+            continue
+
+    df_membrane = df.rename(columns=new_columns_mem)[col_mem_lst]
+
+    plt.figure(figsize=(20, 8))
+
+    for col in df_membrane.columns:
+        membrane_potential = df_membrane[col].to_numpy()
+        plt.plot(np.arange(membrane_potential.shape[0]), membrane_potential, label=col)
+
+    plt.xlabel('Time')
+    plt.ylabel('Membrane potential')
+    plt.legend()
+
+def plot_inputs(input_spikes: np.ndarray) -> None:
+    df_input = pd.DataFrame(input_spikes.T)
+
+    plt.figure(figsize=(20, 8))
+    sns.heatmap(df_input, cmap='Greys')
+    plt.xlabel('Time')
+    plt.ylabel('Index')
+
+
+def plot_outputs(df: pd.DataFrame) -> None:
+    """_summary_
+
+    Args:
+        df (pd.DataFrame): _description_
+    """
+    columns = df.columns
+    new_columns_out = {}
+    col_out_lst = []
+
+    for col_name in columns:
+        if 'out_spike_' in col_name:
+            new_col_name = col_name.replace('out_spike_', '')
+            new_columns_out[f'{col_name}'] = new_col_name
+
+            col_out_lst.append(new_col_name)
+
+        else:
+            continue
+
+    df_output = df.rename(columns=new_columns_out)[col_out_lst].T
+
+    # ---heatmaps---
+    plt.figure(figsize=(20, 8))
+    sns.heatmap(df_output, cmap='Greys')
+    plt.xlabel('Time steps, ms')
+    plt.ylabel('Neuron`s index')
 
 def main():
     df_name = 'hidden_neurons/data_mem.csv'
