@@ -211,7 +211,7 @@ class IntraConnectLayer(HiddenLayer):
             tau_max = np.nan
 
         self.syn_matrix, weight_corr_history = weight_correction_hebb(connections, spikes_indexes,
-                                                                      self.syn_matrix, tau_max,
+                                                                      self.syn_matrix, 200,
                                                                       self.dt, 10)
 
         print(weight_corr_history)

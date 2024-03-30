@@ -294,6 +294,7 @@ def intralayer_hebbian(t_1, t_2, tau_max, sigma_max, dt):
     """
 
     if (t_1 - t_2) * dt >= tau_max:
+        print((t_1 - t_2) * dt)
         raise ValueError('Increase t_max parameter')
 
     calculation = (- 0.5 * np.log(((t_1 - t_2) * dt) / (tau_max - ((t_1 - t_2) * dt)))) * sigma_max / 3.57
@@ -359,8 +360,8 @@ def weight_correction_hebb(connections: dict, spikes_indexes: list,
     weight_corr_history = []
 
     for key in connections.keys():
-        if len(spikes_indexes[key]) == 1:
-            post_spyke_step = spikes_indexes[key][-1]
+        if len(spikes_indexes[key]) != 0:
+            post_spyke_step = spikes_indexes[key][0]
             for pre_spyke_neuron in connections[key]:
                 for pre_spyke_step in spikes_indexes[pre_spyke_neuron]:
                     if pre_spyke_step > post_spyke_step:
@@ -371,25 +372,24 @@ def weight_correction_hebb(connections: dict, spikes_indexes: list,
                         syn_matrix[pre_spyke_neuron][key] += coeff
                         weight_corr_history.append(f'Coef: {coeff}, Index: {pre_spyke_neuron, key}')
 
-
-        # ОШИБКА В АЛГОРИТМЕ!!!
-        elif len(spikes_indexes[key]) > 1:
-            # ВОТ ТУТ (берет только последние два)
-            post_spyke_step = spikes_indexes[key][-1]
-            limit = spikes_indexes[key][-2]
-            # ВОТ ТУТ
-            for pre_spyke_neuron in connections[key]:
-                for pre_spyke_step in spikes_indexes[pre_spyke_neuron]:
-                    if pre_spyke_step > limit:
-                        if pre_spyke_step > post_spyke_step:
-                            # уменьшение связи по правилу STDP
-                            continue
-                        else:
-                            coeff = intralayer_hebbian(post_spyke_step, pre_spyke_step, tau_max, sigma_max, dt)
-                            syn_matrix[pre_spyke_neuron][key] += coeff
-                            weight_corr_history.append(f'Coef: {coeff}, Index: {pre_spyke_neuron, key}')
-                    else:
-                        continue
+            if len(spikes_indexes[key]) > 1:
+                for i in range(len(spikes_indexes[key]) - 1):
+                    post_spyke_step = spikes_indexes[key][i+1]
+                    limit = spikes_indexes[key][i]
+                    for pre_spyke_neuron in connections[key]:
+                        for pre_spyke_step in spikes_indexes[pre_spyke_neuron]:
+                            if pre_spyke_step > limit:
+                                if pre_spyke_step > post_spyke_step:
+                                    # уменьшение связи по правилу STDP
+                                    continue
+                                else:
+                                    coeff = intralayer_hebbian(post_spyke_step, pre_spyke_step, tau_max, sigma_max, dt)
+                                    syn_matrix[pre_spyke_neuron][key] += coeff
+                                    weight_corr_history.append(f'Coef: {coeff}, Index: {pre_spyke_neuron, key}')
+                            else:
+                                continue
+            else:
+                continue
 
         else:
             continue
@@ -422,6 +422,18 @@ def plot_mem(df: pd.DataFrame) -> None:
     plt.xlabel('Time')
     plt.ylabel('Membrane potential')
     plt.legend()
+
+def plot_mem_2_0(matrix) -> None:
+
+    plt.figure(figsize=(20, 8))
+
+    for i in range(len(matrix[0])):
+        column_data = [row[i] for row in matrix]
+        plt.plot(column_data, label=f'Нейрон {i + 1}')
+
+    plt.legend()
+    plt.xlabel('Time')
+    plt.ylabel('Membrane potential')
 
 def plot_inputs(input_spikes: np.ndarray) -> None:
     df_input = pd.DataFrame(input_spikes.T)
