@@ -10,6 +10,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import confusion_matrix
 from spikingjelly import visualizing
 import utils
+import networkx as nx
 
 
 n_input = 28 * 28  # input layer
@@ -44,9 +45,16 @@ post = '''Apost += dApost
     w = clip(w + lr*Apre, 0, gmax)'''
 
 
+def generate_small_world(n_nodes, k, p):
+    return nx.watts_strogatz_graph(n_nodes, k, p)
+
+
 class Model:
     def __init__(self, debug=False):
         app = {}
+
+        # инициализация малого мира
+        G = generate_small_world(n_e, 10, 0.5)
 
         # Входные изображения кодируются как скорость Пуассоновских генераторов
         app['PG'] = PoissonGroup(n_input, rates=np.zeros(n_input) * Hz, name='PG')
@@ -85,6 +93,14 @@ class Model:
         app['S1'].connect()
         app['S1'].w = 'rand()*gmax'  # random weights initialisation
         app['S1'].lr = 1  # enable stdp
+
+        # здесь надо добавить другое правило обучения, а не STDP
+        app['S_small_world'] = Synapses(app['EG'], app['EG'], stdp, on_pre=pre, on_post=post, method='euler', name='S_small_world')
+
+        for (u, v) in G.edges():
+            print(f'{u} --- {v}')
+            app['S_small_world'].connect(j=u, i=v)
+            app['S1'].w = 'rand()*gmax'  # здесь нужно сделать так, чтобы генерировались рандомные веса на порядок меньше, чем основные
 
         if (debug):
             # some synapses
