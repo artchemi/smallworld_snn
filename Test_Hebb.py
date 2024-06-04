@@ -54,7 +54,7 @@ def main():
 
     #with open(f'{random_dir_name}/corr_{random_dir_name}.csv', "w", newline="") as file:
         #csv_writer = csv.writer(file)
-        #for row in weight:
+        #for row in spikes:
             #csv_writer.writerow(row)
 
     # ---draw heatmap and save image---

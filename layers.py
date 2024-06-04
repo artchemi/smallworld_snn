@@ -332,7 +332,7 @@ class IntraConnectLayerBio(HiddenLayer):
 
         print(self.graph)
         print('Neurons', nx.get_node_attributes(self.graph, 'pos'))
-        print('Synapse: ', nx.get_edge_attributes(self.graph, 'weight'))
+        print('Synapse: ', nx.get_edge_attributes(self.graph, 'spikes'))
 
     @Decorators.benchmark
     def feedforward(self):

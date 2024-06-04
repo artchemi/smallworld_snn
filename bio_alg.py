@@ -116,7 +116,7 @@ def draw_graph(color='r') -> None:
 
     print(G)
     print('Neurons', nx.get_node_attributes(G, 'pos'))
-    print('Synapse: ', nx.get_edge_attributes(G, 'weight'))
+    print('Synapse: ', nx.get_edge_attributes(G, 'spikes'))
     nx.draw_networkx(G, pos=pos_dict, with_labels=True, **node_opts)
 
     #nx.draw(G, nx.get_node_attributes(G, 'pos'), with_labels=True, node_size=1)
